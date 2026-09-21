@@ -1,0 +1,16 @@
+{
+  "name": "egg-pi",
+  "version": "0.1.0",
+  "description": "A pi.dev package",
+  "keywords": [
+    "pi-package"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "pi": {
+    "extensions": ["./extensions"],
+    "skills": ["./skills"],
+    "prompts": ["./prompts"],
+    "themes": ["./themes"]
+  }
+}
