@@ -1,6 +1,6 @@
 ---
-name: review
-description: Review the current branch against its merge-base using parallel specialist reviewers for linting, maintainability, correctness, tests, and security. Use only when the user explicitly invokes /skill:review.
+name: vet
+description: Review the current branch against its merge-base using parallel specialist reviewers for linting, maintainability, correctness, tests, and security. Use only when the user explicitly invokes /skill:vet.
 disable-model-invocation: true
 ---
 
