@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Input, Key, matchesKey, Text, wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { Input, Key, matchesKey, Text, truncateToWidth, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 
 const AskUserQuestionParams = Type.Object({
@@ -51,15 +51,10 @@ export default function askUserQuestion(pi: ExtensionAPI) {
 			const result = await ctx.ui.custom<{ answer: string; wasCustom: boolean } | null>((tui, theme, _kb, done) => {
 				let selected = 0;
 				let editing = providedOptions.length === 0;
-				let lines: string[] | undefined;
-
 				const editor = new Input({ prompt: "", placeholder: "_" });
 				editor.focused = true;
 
-				const refresh = () => {
-					lines = undefined;
-					tui.requestRender();
-				};
+				const refresh = () => tui.requestRender();
 
 				editor.onSubmit = (value) => {
 					const answer = value.trim();
@@ -93,27 +88,26 @@ export default function askUserQuestion(pi: ExtensionAPI) {
 				};
 
 				const render = (width: number): string[] => {
-					if (lines) return lines;
-					const result: string[] = [theme.fg("accent", "─".repeat(Math.max(1, width)))];
-					result.push(...wrapTextWithAnsi(theme.fg("text", params.question), Math.max(1, width)));
+					const safeWidth = Math.max(1, width);
+					const result: string[] = [theme.fg("accent", "─".repeat(safeWidth))];
+					result.push(...wrapTextWithAnsi(theme.fg("text", params.question), safeWidth));
 					result.push("");
 
 					options.forEach((option, index) => {
 						const prefix = index === selected ? theme.fg("accent", "> ") : "  ";
 						if (editing && index === options.length - 1) {
-							result.push(...editor.render(Math.max(1, width - 5)).map((line) => `${prefix}${index + 1}. ${line}`));
+							result.push(...editor.render(Math.max(1, safeWidth - 5)).map((line) => `${prefix}${index + 1}. ${line}`));
 							return;
 						}
 						const label = `${index + 1}. ${option}${option === recommended ? " (recommended)" : ""}`;
 						result.push(prefix + (option === recommended ? theme.bold(label) : label));
 					});
 					result.push("", theme.fg("dim", editing ? "Enter to submit • Esc to go back" : "↑↓ navigate • Enter to select or type • Esc to cancel"));
-					result.push(theme.fg("accent", "─".repeat(Math.max(1, width))));
-					lines = result;
-					return result;
+					result.push(theme.fg("accent", "─".repeat(safeWidth)));
+					return result.map((line) => truncateToWidth(line, safeWidth, ""));
 				};
 
-				return { render, invalidate: () => (lines = undefined), handleInput };
+				return { render, invalidate: () => {}, handleInput };
 			});
 
 			if (!result) {
