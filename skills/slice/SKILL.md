@@ -27,7 +27,7 @@ For every candidate, reason through these questions:
 9. **Safety:** Would deferring authorization, privacy, security, accessibility, compliance, safety, financial correctness, or data integrity make it unsafe? If so, include the control now.
 10. **Stopping point:** Can it be released, disabled, reviewed, or used to make the next decision safely?
 
-Prefer the smallest **meaningful** slice, not the smallest possible task. Avoid both oversized slices that require hidden assumptions and tiny slices that create coordination overhead without independent value.
+Prefer the smallest **meaningful** slice, not the smallest possible task. Avoid both oversized slices that require hidden assumptions and tiny slices that create coordination overhead without independent value. Do not default to one slice: test whether independently valuable behaviors or rules can ship in sequence. In particular, separate a new happy-path capability from enhanced failure handling when the first can safely use existing/default failure behavior and the latter has its own outcome and acceptance evidence. Keep essential safety controls in the first slice; do not split merely to defer them. For example, JSONL bulk dispatch using current failure behavior can be one slice, with per-message DLQ handling on batch failure as a later slice if current behavior is acceptable meanwhile.
 
 Separate source material into observed facts, stakeholder claims, evidence, interpretations, hypotheses, hard constraints, and unknowns. Never turn an interpretation or hypothesis into a requirement without confirmation.
 
@@ -51,7 +51,7 @@ Choose the lens that matches the shape of the work; apply more than one recursiv
 1. Check that the path exists and is readable. If not, report the problem and stop.
 2. Build a compact evidence and coverage map. Every relevant item must be assigned to a slice, explicitly rejected, marked unresolved, or identified as cross-cutting.
 3. Identify candidate boundaries using the thinking model and slicing lenses above.
-4. Reject or merge candidates that have no meaningful outcome, contain unrelated outcomes, are only technical layers, hide dependencies, omit essential controls, are unsafe, or cannot be demonstrated, measured, disabled, or recovered.
+4. Merge candidates only when they lack independent value or cannot be safely delivered separately. Reject candidates that have no meaningful outcome, are only technical layers, hide dependencies, omit essential controls, are unsafe, or cannot be demonstrated, measured, disabled, or recovered. Before merging failure behavior into a happy-path slice, check whether the current/default behavior is safe and acceptable for an earlier increment.
 5. Ask focused clarification questions with `ask_user_question`, one at a time. Ask only what is needed to resolve missing value, beneficiary, scope, safety, dependency, or acceptance evidence. Always allow a custom answer. Do not guess.
 6. Re-check coverage, value, dependency cycles, risk, operability, and independence after each answer.
 7. Present the proposed result in Markdown. Keep it in chat; do not create or modify a file unless the user explicitly requests saving it.

@@ -1,7 +1,6 @@
 ---
 name: vet
 description: Review the current branch against its merge-base using parallel specialist reviewers for linting, maintainability, correctness, tests, and security. Use only when the user explicitly invokes /skill:vet.
-disable-model-invocation: true
 ---
 
 # Branch review
@@ -29,11 +28,14 @@ fi
 merge_base="$(git merge-base HEAD "$base_ref")"
 git diff --stat "$merge_base"...HEAD
 git diff --name-status "$merge_base"...HEAD
+git diff --stat HEAD --
+git diff --name-status HEAD --
+git ls-files --others --exclude-standard
 ```
 
-If the supplied/default ref is missing, use an existing `main`, `master`, or upstream tracking ref; if no base can be resolved, stop and report that instead of guessing. Review only changes reachable in `merge_base...HEAD`, plus the surrounding code needed to verify their behavior. Do not report pre-existing issues unless the branch makes them reachable or materially worse.
+If the supplied/default ref is missing, use an existing `main`, `master`, or upstream tracking ref; if no base can be resolved, stop and report that instead of guessing. Review the committed `merge_base...HEAD` changes **and** all current working-tree changes: `git diff HEAD --` includes staged and unstaged tracked edits, while `git ls-files --others --exclude-standard` lists untracked files that must be inspected directly. Include surrounding code needed to verify behavior. Do not report pre-existing issues unless an included change makes them reachable or materially worse. Never stage, discard, or overwrite changes during review.
 
-Include the exact base ref and merge-base SHA in every reviewer prompt.
+Include the exact base ref and merge-base SHA in every reviewer prompt, and tell every reviewer to inspect both the committed diff and the staged, unstaged, and untracked working-tree changes. Recheck `git status --short` before the verdict; if the working tree changed during review, inspect and review those changes before concluding.
 
 ## Review fan-out
 
@@ -64,7 +66,7 @@ Use a workflow like this (adapt task text to the resolved repository and scope):
 subagent({
   context: "fresh",
   workflowScript: `
-    const scope = ${JSON.stringify("Repository: <cwd>; base: <base_ref>; merge-base: <merge_base>; diff: <merge_base>...HEAD")};
+    const scope = ${JSON.stringify("Repository: <cwd>; base: <base_ref>; merge-base: <merge_base>; committed diff: <merge_base>...HEAD; also review staged and unstaged tracked changes from git diff HEAD -- and untracked non-ignored files from git ls-files --others --exclude-standard (read those files directly)")};
     const jobs = await runs.all([
       { key: "lint", phase: "Review", label: "Review lint and static checks", agent: "reviewer", task: scope + "\\nReview linting and static checks. Do not modify files. Return only evidence-backed findings in the required format." },
       { key: "maintainability", phase: "Review", label: "Review maintainability", agent: "reviewer", task: scope + "\\nReview code smells and maintainability. Do not modify files. Return only evidence-backed findings in the required format." },
@@ -107,7 +109,7 @@ Return a compact report in this order:
 # Branch review
 Base: <ref>
 Merge-base: <sha>
-Compared: <merge-base>...HEAD
+Compared: <merge-base>...HEAD plus current staged, unstaged, and untracked changes
 Reviewers: <completed>/<total>; unavailable: <lanes or none>
 
 ## Critical

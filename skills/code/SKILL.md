@@ -1,7 +1,6 @@
 ---
 name: code
 description: Implement coding tasks with language-idiomatic, maintainable code using API-first design, outside-in TDD, and delegated workers. Use only when the user explicitly invokes /skill:code.
-disable-model-invocation: true
 ---
 
 # Coding
