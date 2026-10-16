@@ -1,6 +1,6 @@
 ---
 name: capture
-description: Guide a one-question-at-a-time intake interview that turns an ambiguous software request into a problem-space intent record. Use when the user explicitly invokes /capture or /skill:capture; never implement the request during capture.
+description: Guide a one-question-at-a-time intake interview that turns an ambiguous software request into a problem-space intent record. Use when the user explicitly invokes /capture or /skill:capture, or as a document stage of an explicitly requested /skill:recover, /skill:sync, or /skill:delta; never implement the request during capture.
 disable-model-invocation: true
 ---
 
@@ -9,6 +9,14 @@ disable-model-invocation: true
 Run the Capture stage before solution design or implementation. Capture the problem space, not a prescribed implementation.
 
 The output is an **intent document**, not a technical specification, implementation plan, or test plan. The user’s initial feature wording may contain technical terms; do not let those terms determine the interview or become requirements automatically.
+
+## Implementation-state authority
+
+For this documentation workflow, **assume requested work is not implemented for planning unless the matching plan's todo records it complete**. Only that todo establishes implementation progress. Use a supplied/linked todo from a file or the current session; confirm the relationship and version if ambiguous. If no matching todo or task exists, or its checkbox is unchecked, treat that work as pending. A checked entry applies only to its mapped task, not the whole feature. Do not require a todo to start capture or create one here.
+
+Code inspection remains available to understand behavior, entry points, constraints, and reusable parts within this skill's problem-space boundary. Source, commits, passing tests, existing documents, and user claims are not substitutes for recorded todo completion. Keep source observations separate from planning status: “code contains this behavior; todo does not record completion” is valid; claiming the code is absent is not. Do not omit requested scope merely because it appears in code.
+
+Apply the same rule when **recovering documents from an already implemented branch**. Reconstruct candidate intent from evidence and interview the user; do not infer original intent, approvals, completion, or pre-change behavior from the branch. Never mark todo entries complete or reset existing progress in this skill. Keep relevant observations and the todo reference/default-pending assumption in the existing Current State & Workaround and Evidence Classification sections, without adding technical plans. Build still reconciles real source/run state before executing pending work; pending is not permission to rewrite existing code or replay mutations.
 
 ## Non-negotiable output contract
 
