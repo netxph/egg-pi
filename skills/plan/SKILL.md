@@ -25,6 +25,14 @@ Apply the same rule when **recovering documents from an already implemented bran
 3. Reuse the spec's feature entry-point map. Verify relevant entry points, behavior paths, callers, tests, reusable helpers, manifests, and test scripts in the current repository. Prefer code-graph discovery and targeted reads/traces when available. Source inspection is not runtime verification. Identify exact existing paths and commands; label new paths as proposed. Never invent a runnable command, framework, route, or test suite from habit. If you cannot find the external trigger or test harness, ask the user.
 4. Interview with `ask_user_question`, one focused question at a time, for remaining execution decisions: test environment, constraints, migrations, compatibility, delivery boundaries, risk tolerance, and choices not resolved by evidence. Do not repeat answered questions or silently add product scope. Briefly explain relevant evidence and alternatives; use plain language and allow custom answers.
 
+## Backwards compatibility
+
+Check the approved spec's decisions for **API**, **Data schema**, **Cache**, **Deployment manifests**, and **Default behaviour** against connected callers, stored state, manifests, defaults, and existing tests. Reuse confirmed upstream answers; do not reopen accepted product decisions. Record all five categories in Impacted Files & Data Models, citing the exact spec version/requirement and affected consumers/state, including **Not applicable — <reason>** when justified. Do not treat an absent compatibility section in an older spec as proof of safety: use its substantive requirements and evidence, and surface any consequential `unknown`.
+
+For unresolved execution choices, use `ask_user_question`, one focused question at a time. Determine how to meet preservation or specified-break requirements: migration order and old-data checks, cache invalidation/versioning/rebuild checks, old/new-version coexistence or approved cutover, deployment manifest/default-configuration validation, and rollback or explicitly accepted irreversible limits. Plan only safeguards the actual impact requires; do not invent shims, migrations, or release infrastructure. If behaviour or permission to break compatibility is missing or contradictory, do not authorize a new breaking change: ask to revise and reapprove the spec before continuing. A plan or todo is not a substitute for a specified exception.
+
+Map compatibility tasks and checks to the spec's R/AC references, owning slices, dependencies, and todo task IDs; include regression checks for preservation and transition checks for intentional breaks. Put required migration/invalidation/rollout prerequisites before dependent implementation or release gates and sequence conflicting schema/cache/deployment changes. Extend outside acceptance with existing-consumer, old-data/cache, omitted-setting, and upgrade/rollback scenarios where applicable. Record safe working directories, fixtures, commands, expected results, and recovery conditions, never invented execution evidence. Do not run migrations, flush caches, or deploy during planning. Required safeguards and checks remain mandatory even when vet may label the specified break a non-blocking note.
+
 ## Decompose vertically first
 
 A vertical slice delivers one narrow, demonstrable outcome through all necessary layers. A database, service, or UI layer alone is not a delivery slice.
@@ -60,7 +68,7 @@ Optimize for the shortest **safe** dependency path, not the most workers.
 
 ## Review and completeness
 
-Check coverage in both directions: each requirement/scenario has implementation and outside acceptance tasks, and every task serves a requirement or necessary verification/enabler. Verify all IDs, dependencies, file boundaries, commands, red/green gates, and parallel groups agree across both documents. Keep decisions concise and concrete; avoid full implementation bodies, speculative refactors, optional infrastructure, time estimates without evidence, and generic “handle edge cases” tasks.
+Check coverage in both directions: each requirement/scenario has implementation and outside acceptance tasks, and every task serves a requirement or necessary verification/enabler. Verify all IDs, dependencies, file boundaries, commands, red/green gates, and parallel groups agree across both documents. Every applicable compatibility obligation or specified break must map to its spec evidence, safeguards, verification tasks, and safe release/recovery conditions; unresolved impacts block a complete plan. Keep decisions concise and concrete; avoid full implementation bodies, speculative refactors, optional infrastructure, time estimates without evidence, and generic “handle edge cases” tasks.
 
 Every final review section must be answered, with no placeholders or unanswered questions. Use **None** or **Not applicable — <reason>** only when justified. Known risks need an agreed response and verification/rollback condition. If evidence is unavailable, ask or show a **Draft** explicitly listing blockers and affected tasks; it is not Ready and does not authorize execution.
 
@@ -94,6 +102,15 @@ todo: "./todo.md"
 | --- | --- | --- | --- |
 | <exact path> | <classification> | <change> | <VS / T IDs> |
 - **Schema & State Changes**: <migrations/config/data/compatibility impact, or reason none>
+
+### Backwards Compatibility
+| Category | Approved Spec Decision / Requirement | Affected Consumers / State / Files | Owning Slice / Tasks / Checks | Transition / Release / Recovery Conditions |
+| --- | --- | --- | --- | --- |
+| API | <spec version; preservation or intentional break; R / AC IDs or justified N/A> | <existing consumers and public contract paths> | <VS / T IDs and compatibility checks or justified N/A> | <compatibility/deprecation/cutover requirements or reason none> |
+| Data schema | <spec decision/evidence> | <records, readers/writers, schema/migration paths> | <VS / T IDs and old-data/transition checks> | <migration order, rollback or accepted irreversible limits> |
+| Cache | <spec decision/evidence> | <older entries, readers/writers, cache paths> | <VS / T IDs and mixed-format/rebuild checks> | <invalidation/versioning/rebuild guarantees or justified N/A> |
+| Deployment manifests | <spec decision/evidence> | <existing environments and manifest/config paths> | <VS / T IDs and manifest/upgrade checks> | <coexistence or approved cutover; rollback conditions> |
+| Default behaviour | <spec decision/evidence> | <omitted-setting outcomes and default paths> | <VS / T IDs and default-configuration checks> | <preserved/changed defaults and required communication or reason none> |
 
 ## 3. Risks & Contingency Plan
 | Risk | Response | Verification / Rollback Condition |
@@ -161,6 +178,7 @@ During execution, build replaces these values with actual progress: task/slice I
 - **Covers**: <R / AC IDs and applicable constraints>
 - **Entry Point**: <external trigger; path + symbol>
 - **Slice Dependencies**: <VS IDs and reasons or None>
+- **Compatibility**: <applicable categories, spec R / AC references, required safeguards and verification task IDs, or Not applicable — reason>
 
 - [ ] **T-001 — Outside RED: <scenario>**
   - **Covers**: <R / AC IDs>

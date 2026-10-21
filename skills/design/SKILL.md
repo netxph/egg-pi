@@ -30,6 +30,16 @@ Apply the same rule when **recovering documents from an already implemented bran
 8. Review the whole document for complete coverage, contradictions, ambiguous wording, unsupported claims, and missing test entry points. Keep each sentence short and concrete. Define necessary domain terms; replace jargon and vague promises with observable behavior. Do not confuse concise writing with omitted decisions.
 9. Present a complete spec as **In Review** and wait for explicit approval of that exact version. Do not mark it Approved on the user's behalf, invoke `/plan`, or start implementation. Revisions affecting the contract require renewed review. If the user requests an interim draft or evidence is unavailable, you may show a **Draft** with clearly listed questions and their impact. It is not a final spec and cannot pass the approval gate.
 
+## Backwards compatibility
+
+Explicitly assess **API**, **Data schema**, **Cache**, **Deployment manifests**, and **Default behaviour** against existing consumers and observable state. Reuse confirmed upstream answers from capture/intent and existing specs; do not repeat their interviews. Inspect connected public contracts, data/cache readers and writers, deployment assumptions, and omitted-setting behaviour to identify concrete impacts, distinguishing source observations from confirmed desired behaviour.
+
+Use `ask_user_question`, one focused question at a time, for unresolved decisions: which callers/data must still work; whether existing stored/cached state must remain usable; whether old and new versions must coexist during upgrade/rollback or a coordinated cutover is acceptable; and which unchanged-setting outcomes may change. Ask only about applicable gaps, explain the affected users/operators, and never infer acceptance from current code or a proposed implementation.
+
+In Contract & Invariants, include the compatibility table below with every category classified **Preserve|Intentional break|Not applicable|Unknown**. For each intentional break, obtain explicit user confirmation and specify the previous and new observable contract, affected consumers/state, accepted disruption, and required transition safeguards or explicitly accepted limits. Give preservation obligations and intentional changes stable `R-` requirements and `AC-` scenarios; reference them in the table so vet can cite the exact approved specification version and requirement. Describe required migration/invalidation/rollout/rollback outcomes, not implementation procedures. If a safeguard is inapplicable, record why rather than inventing infrastructure.
+
+A compatibility decision does not bypass the intent synchronization gate or exact spec approval. A capture's accepted disruption is context, not a blanket waiver. An unresolved consequential `unknown` blocks an In Review spec; keep it Draft under the existing completeness rules. Use **Not applicable — <reason>** only when supported. Specified breaks may later be non-blocking compatibility notes in vet only when implementation and required safeguards match; independent defects and failed checks remain findings.
+
 ## Intent synchronization gate
 
 Throughout the workflow, compare the design with the supplied intent. If any design decision adds, removes, contradicts, or changes an intended outcome, scope boundary, constraint, or non-goal, **stop immediately and return the current spec as a Draft**. This applies even when code findings or a later user answer motivate the deviation. Clarifying behavior within the intent is not itself a deviation.
@@ -80,6 +90,15 @@ source_intent: "<input reference>"
 ## 4. Contract & Invariants
 <inputs, outputs, validation, errors, state transitions, and guarantees that always hold>
 <relevant non-functional and safety constraints, with observable acceptance conditions>
+
+### Backwards Compatibility
+| Category | Decision | Existing → Required Behaviour / Affected Consumers or State | Requirements / Scenarios | Transition Safeguards / Accepted Consequences |
+| --- | --- | --- | --- | --- |
+| API | <Preserve / Intentional break / Not applicable — reason> | <public contract before/after and consumers> | <R / AC IDs or justified N/A> | <required guarantees; confirmed disruption or reason none> |
+| Data schema | <decision> | <existing records/readers/writers and required compatibility> | <R / AC IDs or justified N/A> | <migration/readability/rollback outcomes or justified N/A> |
+| Cache | <decision> | <older cached state and consumer expectations> | <R / AC IDs or justified N/A> | <invalidation/rebuild/coexistence guarantees or justified N/A> |
+| Deployment manifests | <decision> | <existing installation/upgrade requirements> | <R / AC IDs or justified N/A> | <rollout/cutover/rollback guarantees or justified N/A> |
+| Default behaviour | <decision> | <omitted-setting outcomes before/after> | <R / AC IDs or justified N/A> | <preserved defaults or confirmed changed expectations> |
 
 ## 5. Open Questions & Risks
 - **Open Questions**: None.

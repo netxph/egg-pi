@@ -34,6 +34,32 @@ test("capture, slice, design, and plan use only todo completion, including branc
 	assert(plan.includes("Implementation-State Source"));
 });
 
+test("capture, design, and plan interview for compatibility and record all five categories", () => {
+	for (const name of ["capture", "design", "plan"]) {
+		const text = read(name);
+		const template = text.match(/```markdown\n([\s\S]*?)\n```/)[1];
+		for (const phrase of ["## Backwards compatibility", "ask_user_question", "Reuse confirmed upstream answers", "Not applicable", "unknown"])
+			assert(text.includes(phrase), `${name}: ${phrase}`);
+		assert(template.includes("### Backwards Compatibility"), name);
+		for (const category of ["API", "Data schema", "Cache", "Deployment manifests", "Default behaviour"])
+			assert(template.includes(`| ${category} |`), `${name}: ${category}`);
+	}
+});
+
+test("compatibility decisions stay at the right document stage and remain traceable to vet", () => {
+	const capture = read("capture"), design = read("design");
+	for (const phrase of ["plain-language impact", "not approval of a technical breaking change", "Do not ask for endpoint", "Uncertainties & Open Questions"])
+		assert(capture.includes(phrase), phrase);
+	const captureTemplate = capture.match(/```markdown\n([\s\S]*?)\n```/)[1];
+	assert.equal((captureTemplate.match(/^## \d\./gm) ?? []).length, 8);
+	assert(captureTemplate.indexOf("### Backwards Compatibility") > captureTemplate.indexOf("## 6. Constraints & Boundaries"));
+	assert(captureTemplate.indexOf("### Backwards Compatibility") < captureTemplate.indexOf("## 7. Non-Goals"));
+	for (const phrase of ["Preserve|Intentional break|Not applicable|Unknown", "explicit user confirmation", "R-", "AC-", "exact approved specification", "does not bypass the intent synchronization gate"])
+		assert(design.includes(phrase), phrase);
+	for (const phrase of ["do not authorize a new breaking change", "revise and reapprove the spec", "migration", "invalidation", "rollout", "rollback", "compatibility tasks and checks", "Do not run migrations", "**Compatibility**:"])
+		assert(plan.includes(phrase), phrase);
+});
+
 test("recover composes all document stages and confirms evidence-backed todo recovery in chat", () => {
 	const recover = read("recover");
 	for (const name of ["capture", "slice", "design", "plan"]) {
@@ -147,13 +173,63 @@ test("code always delegates fresh leaf workers, including tiny work, without rec
 	}
 });
 
+test("every code worker bootstraps lc with active-task guidance without broadening its role", () => {
+	const lc = readFileSync(join(cwd, "prompts", "lc.md"), "utf8");
+	assert(lc.includes("# Local coding workflow"));
+	assert(lc.includes("${@:-"), "lc has a session-only default that task guidance must replace");
+	for (const phrase of ["## Worker startup: apply `/lc` first", "../../prompts/lc.md", "installed skill directory, not the target repository", "acceptance authors, implementers, integration-only workers, and repair workers", "absolute template path", "non-empty task-specific guidance", "Before task discovery or edits", "replaces the template's session-only default", "do not wait for another user turn", "not a shell command or a callable tool", "do not assume slash text in a child task is expanded", "No extra child/session", "does not widen the assigned role", "stop before editing", "lc bootstrap + complete role-focused brief"])
+		assert(code.includes(phrase), phrase);
+});
+
+test("build pipelines acceptance authorship without bypassing slice RED or upstream specifications", () => {
+	for (const phrase of ["capture → slice → design", "Do not repeat specification interviews", "Role-focused handoffs", "acceptance-test author", "implementation of slice A", "acceptance tests for slice B", "test-authoring readiness", "implementation readiness", "behavioral RED", "assertion identity"])
+		assert(build.includes(phrase), phrase);
+	assert(build.includes("code owns all implementation worker launches"));
+});
+
+test("code separates acceptance authors from implementers and preserves independent assertions", () => {
+	for (const phrase of ["## Focused worker roles", "**Acceptance-test author**", "**Implementer**", "same `worker` profile", "Do not read private implementation", "public entry point", "production code is read-only", "acceptance tests and their fixtures are read-only", "internal unit tests", "initial outside RED", "fresh acceptance-test author", "additional agreed scenarios", "not historical RED", "Do not add a separate unit-test author"])
+		assert(code.includes(phrase), phrase);
+	assert(code.indexOf("## Focused worker roles") < code.indexOf("## Implementation principles"));
+});
+
+test("workers and reviewers receive focused evidence rather than the entire orchestration history", () => {
+	for (const text of [build, code, vet]) {
+		assert(text.includes("role-focused"));
+		assert(text.includes("session-only"));
+		assert(text.includes("original"));
+	}
+	assert(code.includes("Do not pass the entire orchestration packet"));
+	assert(vet.includes("Do not require every reviewer to read every document"));
+	assert(!vet.includes("each a distinct lane brief and the complete shared context packet"));
+	assert(vet.includes("correctness and test-completion lanes"));
+});
+
+test("vet checks independent acceptance assertions against specifications and the integrated result", () => {
+	for (const phrase of ["not the acceptance-test author or implementer session", "not an unquestionable oracle", "private collaborators", "assertion identity", "additional scenarios", "not historical RED", "correctness and test-completion lanes"])
+		assert(vet.includes(phrase), phrase);
+});
+
 test("vet reviews document compliance and actual gate evidence alongside the full diff", () => {
 	for (const phrase of ["## Document alignment", "## Plan and test-gate evidence", "staged, unstaged, and untracked", "historical RED", "integrated GREEN", "unavailable required review lane", "content digests", "snapshot", "Standalone branch review"])
 		assert(vet.includes(phrase), phrase);
 	assert(!vet.includes("workflowScript:"));
 });
 
-test("vet's workflow example executes with five distinct fresh-context read-only review lanes", async () => {
+test("vet includes attributable build warnings and defers non-Critical security work without downgrading severity", () => {
+	for (const phrase of ["Capture build warnings even when the build succeeds", "attributable to touched source files", "exclude unrelated pre-existing warnings", "command, exit status, diagnostic", "deduplicate warnings", "isolated validation environment", "report the build check unavailable", "Security follow-ups (separate work items, lower priority)", "retaining severity, evidence, impact", "do not block the verdict or trigger current build repair rounds", "including when rated High", "Critical security findings stay in the blocking Critical section", "independent non-security defects retain normal gates", "do not create tickets"])
+		assert(vet.includes(phrase), phrase);
+	assert(build.includes("Vet's non-Critical security-only follow-ups stay lower-priority separate work items, not current repair-round tasks"));
+	assert(!vet.includes("`High` always requires human review"));
+});
+
+test("vet labels compatibility categories, impact severity, and specification-backed exceptions", () => {
+	for (const phrase of ["## Backwards compatibility", "**API**", "**Data schema**", "**Cache**", "**Deployment manifests**", "**Default behaviour**", "old and new versions", "Compatibility: API|Data schema|Cache|Deployment manifests|Default behaviour", "Disposition: Unplanned break|Spec-approved change|Unclear", "Unadjusted severity:", "Spec evidence:", "Severity: Info", "exact approved specification version and requirement", "not a required fix", "do not trigger build repair rounds", "A vague mention", "does not waive failed checks", "## Compatibility changes (spec-approved, non-blocking)", "All six review lanes"])
+		assert(vet.includes(phrase), phrase);
+	assert(!vet.includes("All five review lanes"));
+});
+
+test("vet's workflow example executes with six distinct fresh-context read-only review lanes", async () => {
 	const script = vet.match(/```js workflow\n([\s\S]*?)\n```/)[1];
 	const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
 	let jobs;
@@ -163,9 +239,17 @@ test("vet's workflow example executes with five distinct fresh-context read-only
 			return items.map((item) => ({ output: item.key, outputReference: item.output, artifactPaths: [] }));
 		},
 	});
-	assert.equal(result.length, 5);
-	assert.equal(new Set(jobs.map((job) => job.key)).size, 5);
-	assert.equal(new Set(jobs.map((job) => job.output)).size, 5);
+	assert.equal(result.length, 6);
+	assert.equal(new Set(jobs.map((job) => job.key)).size, 6);
+	assert.equal(new Set(jobs.map((job) => job.output)).size, 6);
+	const byKey = Object.fromEntries(jobs.map((job) => [job.key, job.task]));
+	assert(byKey.correctness.includes("original intent/spec/plan/checklist"));
+	assert(byKey.tests.includes("assertion identities/revisions"));
+	assert(byKey.tests.includes("initial RED, additional scenarios, integrated GREEN"));
+	assert(!byKey.lint.includes("original intent/spec/plan/checklist"));
+	assert(!byKey.maintainability.includes("author/implementer handoffs"));
+	for (const phrase of ["API", "Data schema", "Cache", "Deployment manifests", "Default behaviour", "approved specification", "Unadjusted severity", "Spec-approved change"])
+		assert(byKey.compatibility?.includes(phrase), phrase);
 	for (const job of jobs) {
 		assert.equal(job.context, "fresh");
 		assert.equal(job.agent, "reviewer");
