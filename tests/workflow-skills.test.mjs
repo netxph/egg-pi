@@ -34,7 +34,69 @@ test("capture, slice, design, and plan use only todo completion, including branc
 	assert(plan.includes("Implementation-State Source"));
 });
 
-test("capture, design, and plan interview for compatibility and record all five categories", () => {
+test("capture documents questions before user interaction and preserves consent gates", () => {
+	const capture = read("capture");
+	const template = capture.match(/```markdown\n([\s\S]*?)\n```/)[1];
+	for (const phrase of ["## Document-first questions", "Do not ask the user immediately", "Q-001", "Evidence / Source", "Proposed — needs confirmation", "interview this agent", "Do not use `ask_user_question` as that handoff", "if unavailable", "explicitly request a user interview/review interaction", "record remains draft"])
+		assert(capture.includes(phrase), phrase);
+	assert(template.includes("### Open Questions"));
+	for (const field of ["**Affects**", "**Answer**", "**Evidence / Source**", "**Disposition**"])
+		assert(template.includes(field), field);
+	for (const obsolete of ["begin the guided interview first", "keep asking questions instead of emitting", "Interview with `ask_user_question`", "If approval is missing, ask and wait"])
+		assert(!capture.includes(obsolete), obsolete);
+});
+
+test("design and plan retain direct interviews and exact-version approval gates", () => {
+	const design = read("design");
+	for (const name of ["design", "plan"]) {
+		const text = read(name);
+		for (const phrase of ["Interview with `ask_user_question`, one focused question at a time", "Save only on explicit request"])
+			assert(text.includes(phrase), `${name}: ${phrase}`);
+		for (const captureOnly of ["lazy prompt", "## Input-driven workflow", "## Document-first questions"])
+			assert(!text.toLowerCase().includes(captureOnly.toLowerCase()), `${name}: ${captureOnly}`);
+	}
+	for (const phrase of ["## Intent synchronization gate", "## Completeness gate", "explicit approval of that exact version", "Do not mark it Approved on the user's behalf"])
+		assert(design.includes(phrase), phrase);
+	for (const phrase of ["Require explicit approval of the **exact current spec**", "If approval is missing, ask and wait", "Spec approval is not plan approval", "never automatically execute or delegate"])
+		assert(plan.includes(phrase), phrase);
+});
+
+test("only capture routes lazy prompts and conforming documents into separate steps", () => {
+	const capture = read("capture");
+	for (const phrase of ["## Input-driven workflow", "Route by input content, not phase metadata", "Read file input before classifying it", "Any readable input that does not conform", "### 1. Expand a Lazy Prompt", "Preserve the lazy prompt verbatim (redacting secrets)", "Omit Open Questions entirely", "### 2. Gather Open Questions", "without requiring another phase command", "unambiguous current-session capture", "do not classify an unreadable path as a lazy prompt"])
+		assert(capture.includes(phrase), phrase);
+	assert(capture.indexOf("### 1. Expand a Lazy Prompt") < capture.indexOf("### 2. Gather Open Questions"));
+	for (const name of ["capture", "design", "plan"]) {
+		const text = read(name);
+		assert(!text.includes("## Three-phase workflow"), name);
+		assert(!text.includes("workflow_phase:"), name);
+	}
+});
+
+test("capture edits file input directly, keeps session input in chat, and respects coordinators", () => {
+	const capture = read("capture");
+	for (const phrase of ["edit that input file directly", "without a separate save confirmation", "Re-read before editing", "preserve unrelated user edits", "If reading or writing fails, report the failure", "do not silently switch to another path", "For session or pasted input", "do not create a file", "coordinator's explicit no-save, report-first, and approval boundaries"])
+		assert(capture.includes(phrase), phrase);
+	assert(!capture.includes("Do not create or modify files"));
+	for (const name of ["design", "plan"])
+		assert(read(name).includes("Save only on explicit request"), name);
+});
+
+test("capture interviews resolve all questions and follow-ups before clearing the section", () => {
+	const capture = read("capture");
+	for (const phrase of ["using `ask_user_question`", "Work through every open question and all follow-up questions", "After each answer", "persist the updated file or session record", "End successfully only when all questions and follow-up questions are answered", "Open Questions subsection has been removed", "pause with an explicitly incomplete interview", "preserve unresolved questions", "Never fabricate an answer or clear unresolved questions"])
+		assert(capture.includes(phrase), phrase);
+});
+
+test("capture open questions contain only unresolved items and disappear when empty", () => {
+	const capture = read("capture");
+	for (const phrase of ["Remove addressed questions from Open Questions", "answers and evidence into the relevant document sections", "omit the entire Open Questions subsection, including its heading", "do not renumber or reuse removed IDs", "<omit this entire Open Questions subsection when no open questions remain>"])
+		assert(capture.includes(phrase), phrase);
+	for (const obsolete of ["**Answered**", "<Answered /", "retain resolved answers", "retain the question with its answer", "<use None if there are no questions>", "- **Open Questions**: None."])
+		assert(!capture.includes(obsolete), obsolete);
+});
+
+test("capture, design, and plan record compatibility questions and all five categories", () => {
 	for (const name of ["capture", "design", "plan"]) {
 		const text = read(name);
 		const template = text.match(/```markdown\n([\s\S]*?)\n```/)[1];
