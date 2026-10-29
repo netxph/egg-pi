@@ -59,6 +59,8 @@ Record red and green as separate checkable tasks with dependencies: outside red 
 
 Optimize for the shortest **safe** dependency path, not the most workers.
 
+Atomic todo tasks are verification and progress units, not worker-launch units. Default to **one implementer per coherent slice or bounded change**, covering related production changes, internal unit tests, wiring, and relevant documentation in dependency order. Keep acceptance authorship and outside RED/GREEN gates distinct; build can assign multiple dependent tasks to one worker after external prerequisites pass. Preserve task IDs and task-level evidence. Propose separate implementation assignments only for required external gates, incompatible ownership boundaries, or genuine dependency-safe parallelism; do not manufacture handoffs at each layer or checkbox.
+
 - Give every task a stable `T-001` ID, prerequisite IDs (or `None`), requirement/scenario references, exact read/write boundaries, action, and verifiable result. List actual dependency edges in dependency order; no cycles or undeclared shared setup.
 - Label every task **Sequential** or **Parallel: PG-001**. A parallel label identifies specific peers that may run together **after all prerequisites pass**; it does not mean “start immediately.” A singleton is not a parallel group.
 - Require non-overlapping write sets, no mutable shared environment/data contention, and agreed contracts. Different task names, layers, or files alone do not prove independence. Sequence shared migrations, lockfiles, registries, contract definitions, and integration points, or isolate work with an explicit integration gate.
@@ -169,6 +171,8 @@ Execution rules: Begin only after plan approval. Build is the sole progress owne
 - **Next Action**: Await plan approval.
 - **Blockers / Decisions**: None.
 - **Verification / Review Evidence**: Not run — planning only.
+- **Execution Timing**: Not started — build records timezone-qualified start/end, elapsed time, outcomes, and timing sources by step/task/run; nested or parallel intervals are not additive.
+- **Human Verification Log**: No build interactions yet — build records stable HV IDs, reasons/gates, requested/answered timestamps, response references, and outcomes; completed, pending/cancelled, and clarification-only counts stay separate.
 
 The initial values above apply only to a new checklist. When re-emitting an existing matching todo, retain its actual checkpoint and completion evidence instead of replacing them with these defaults.
 

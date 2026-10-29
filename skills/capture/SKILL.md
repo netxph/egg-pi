@@ -10,18 +10,28 @@ Run the Capture stage before solution design or implementation. Capture the prob
 
 The output is an **intent document**, not a technical specification, implementation plan, or test plan. The user’s initial feature wording may contain technical terms; do not let those terms determine the interview or become requirements automatically.
 
+## Intent document voice
+
+Write the document as a direct statement of intent, not a third-person report about the requester or the capture process. Start Problem & Trigger with the actual problem and its impact, not "The user wants...", "The user requested...", or "This prompt asks...". State desired outcomes directly; use the concrete actor's role when it matters, and first-person wording only when supplied and useful. For example: "Capture interrupts drafting with premature questions. Draft the intent first and gather decisions afterward," not "The user wants capture to stop asking questions."
+
+Do not include an Original Prompt section, a raw-prompt quotation, or a transcript. Integrate the prompt's meaning into the relevant intent sections. When revising older captures, remove legacy original-prompt blocks after preserving their unique facts, constraints, and decisions in those sections. Keep factual attribution and uncertainty in Evidence Classification or concise source references; direct wording must not turn an inference into a fact. Apply this voice to expansion, resumed documents, interview updates, and saved files while preserving the template structure.
+
 ## Input-driven workflow
 
 These steps apply only to capture; design and plan do not use capture phases. Route by input content, not phase metadata. Read file input before classifying it. A conforming capture document has the template's YAML frontmatter, capture type, and required headings in order; fields may still be `unknown` and Open Questions is optional. Any readable input that does not conform to the capture template is a **lazy prompt**, even if long, structured, or supplied in a file. Do not use a legacy `workflow_phase` value to choose the step or emit it in revised documents. An explicit interactive-interview request may continue from expansion into question gathering and interview in the same invocation; otherwise stop after expansion.
 
 ### 1. Expand a Lazy Prompt
-For `/skill:capture <lazy prompt>`, expand the request into the full prefilled capture template using supplied context. Preserve the lazy prompt verbatim (redacting secrets) under Problem & Trigger, separately from the structured summary. Organize and clarify its wording without inventing facts, constraints, or decisions. Use `unknown` for unsupported fields and keep `status: "draft"`. Omit Open Questions entirely; do not gather questions or start an interview in this step. Return the expanded document and stop so the user can enrich it themselves. This overrides later completeness and question-generation instructions for this step, not safety or scope boundaries.
+For `/skill:capture <lazy prompt>`, expand the request into the full prefilled capture template using supplied context. Integrate the lazy prompt's meaning into the relevant intent sections without reproducing the original prompt. Organize and clarify its wording without inventing facts, constraints, or decisions; redact secrets. Use `unknown` for unsupported fields and keep `status: "draft"`. Omit Open Questions entirely; do not gather questions or start an interview in this step. Return the expanded document and stop so the user can enrich it themselves. This overrides later completeness and question-generation instructions for this step, not safety or scope boundaries.
 
 ### 2. Gather Open Questions
-For `/skill:capture intent.md`, pasted conforming capture Markdown, or an explicitly identified capture in the current session, review the complete document and gather remaining open decisions without requiring another phase command or permission to begin. Reuse established answers, reconcile supported evidence into the relevant sections, and add unresolved decisions under `### Open Questions` using the document-first workflow below. Preserve the user's additions, constraints, non-goals, evidence, and original prompt. Return the modified document; omit Open Questions when no open decisions remain. Do not start an interactive user interview unless requested.
+For `/skill:capture intent.md`, pasted conforming capture Markdown, or an explicitly identified capture in the current session, review the complete document and gather remaining open decisions without requiring another phase command or permission to begin. Reuse established answers, reconcile supported evidence into the relevant sections, and add unresolved decisions under `### Open Questions` using the document-first workflow below. Preserve the user's additions, constraints, non-goals, and evidence; integrate any unique original-prompt content into the relevant sections rather than retaining the prompt block. Return the modified document; omit Open Questions when no open decisions remain. Do not start an interactive user interview unless requested.
 
 ### Persistence and Composition
-For a standalone capture invocation with file input, edit that input file directly after expansion, question gathering, and each interview answer; the invocation authorizes updating that document without a separate save confirmation. Re-read before editing, preserve unrelated user edits, and do not write other files or product code. If reading or writing fails, report the failure without claiming it was saved; do not silently switch to another path. For session or pasted input, revise the document in the session and return the complete updated record; do not create a file. With no explicit input, use only an unambiguous current-session capture; otherwise report missing or ambiguous context rather than choosing a document silently.
+For a standalone capture invocation with file input, edit that input file directly after expansion, question gathering, and each interview answer; the invocation authorizes updating that document without a separate save confirmation. Re-read before editing and preserve unrelated user edits. For session or pasted input, revise the document in the session and return the complete updated record; do not create a file unless the user requests saving. With no explicit input, use only an unambiguous current-session capture; otherwise report missing or ambiguous context rather than choosing a document silently.
+
+Honor an explicit save request during expansion, question gathering, an interview, or a later save-only turn. Save the current capture, even if draft or incomplete; saving is not intent acceptance and does not require completing an interview. A save-only request persists the current record without restarting capture or gathering new questions. Use the requested destination; distinguish an output destination from an input path, so a new output file need not already exist. When creating a file and no filename is specified, use `intent.md` in the requested directory, or `./intent.md` in the current working directory if no directory is specified. File-backed updates otherwise keep their input path unless the user requests a different destination. Do not require a filename confirmation for this default.
+
+Before writing, check whether the destination exists. Preserve the current capture's existing user edits; do not overwrite unrelated content without explicit overwrite permission. Write only the capture document, not product code or other artifacts. If reading or writing fails, report the failure without claiming it was saved; do not silently switch to another path.
 
 When invoked as a stage of recover, sync, or delta, retain that coordinator's explicit no-save, report-first, and approval boundaries; a linked source file alone does not authorize a write in those workflows. Intent acceptance remains separate from editing or finishing an interview.
 
@@ -114,7 +124,7 @@ Remove or translate technical specification from the final record. API names, se
 
 Replace vague wording with the user’s concrete examples where available. Mark every unsupported conclusion as an assumption or open question. Do not hide missing information or contradictions by making the prose sound complete.
 
-Return one complete Markdown capture record in chat after each workflow step. For file input, also update the input document directly under Persistence and Composition; for session input, do not create files. Before sending it, verify that the first line is exactly `---`, the closing frontmatter delimiter is present, all required frontmatter keys exist, and every required heading appears exactly once in the required order. Use the template’s field names and section order; do not substitute an ad hoc format.
+Return one complete Markdown capture record in chat after each workflow step. For file input, also update the input document directly under Persistence and Composition; for session input, create a file only when saving is requested, using the requested destination or default `intent.md`. Before sending it, verify that the first line is exactly `---`, the closing frontmatter delimiter is present, all required frontmatter keys exist, and every required heading appears exactly once in the required order. Use the template’s field names and section order; do not substitute an ad hoc format.
 
 ```markdown
 ---
@@ -131,7 +141,7 @@ success_signals: []
 # Capture: <short problem title>
 
 ## 1. Problem & Trigger
-<observed facts and trigger>
+<state the problem, trigger, and impact directly; no requester narration or original-prompt block>
 
 ## 2. Affected Actors & Context
 <people, systems, environments, or workflows affected>
@@ -140,7 +150,7 @@ success_signals: []
 <what happens now and how it is bypassed>
 
 ## 4. Desired Outcome
-<the desired state, without prescribing implementation>
+<state the intended outcome directly, without prescribing implementation>
 
 ## 5. Success Signals
 <measurable or observable checks>

@@ -63,7 +63,7 @@ test("design and plan retain direct interviews and exact-version approval gates"
 
 test("only capture routes lazy prompts and conforming documents into separate steps", () => {
 	const capture = read("capture");
-	for (const phrase of ["## Input-driven workflow", "Route by input content, not phase metadata", "Read file input before classifying it", "Any readable input that does not conform", "### 1. Expand a Lazy Prompt", "Preserve the lazy prompt verbatim (redacting secrets)", "Omit Open Questions entirely", "### 2. Gather Open Questions", "without requiring another phase command", "unambiguous current-session capture", "do not classify an unreadable path as a lazy prompt"])
+	for (const phrase of ["## Input-driven workflow", "Route by input content, not phase metadata", "Read file input before classifying it", "Any readable input that does not conform", "### 1. Expand a Lazy Prompt", "Integrate the lazy prompt's meaning into the relevant intent sections", "Omit Open Questions entirely", "### 2. Gather Open Questions", "without requiring another phase command", "unambiguous current-session capture", "do not classify an unreadable path as a lazy prompt"])
 		assert(capture.includes(phrase), phrase);
 	assert(capture.indexOf("### 1. Expand a Lazy Prompt") < capture.indexOf("### 2. Gather Open Questions"));
 	for (const name of ["capture", "design", "plan"]) {
@@ -73,6 +73,17 @@ test("only capture routes lazy prompts and conforming documents into separate st
 	}
 });
 
+test("capture writes direct intent without requester narration or original-prompt blocks", () => {
+	const capture = read("capture");
+	for (const phrase of ["## Intent document voice", "direct statement of intent, not a third-person report", "Start Problem & Trigger with the actual problem and its impact", 'not "The user wants..."', "Do not include an Original Prompt section", "remove legacy original-prompt blocks after preserving their unique facts", "direct wording must not turn an inference into a fact", "expansion, resumed documents, interview updates, and saved files"])
+		assert(capture.includes(phrase), phrase);
+	assert(!capture.includes("Preserve the lazy prompt verbatim"));
+	const template = capture.match(/```markdown\n([\s\S]*?)\n```/)[1];
+	assert(template.includes("state the problem, trigger, and impact directly"));
+	assert(template.includes("state the intended outcome directly"));
+	assert(!/^#{1,6} Original Prompt/im.test(template));
+});
+
 test("capture edits file input directly, keeps session input in chat, and respects coordinators", () => {
 	const capture = read("capture");
 	for (const phrase of ["edit that input file directly", "without a separate save confirmation", "Re-read before editing", "preserve unrelated user edits", "If reading or writing fails, report the failure", "do not silently switch to another path", "For session or pasted input", "do not create a file", "coordinator's explicit no-save, report-first, and approval boundaries"])
@@ -80,6 +91,13 @@ test("capture edits file input directly, keeps session input in chat, and respec
 	assert(!capture.includes("Do not create or modify files"));
 	for (const name of ["design", "plan"])
 		assert(read(name).includes("Save only on explicit request"), name);
+});
+
+test("capture allows explicit saves and defaults new filenames to intent.md", () => {
+	const capture = read("capture");
+	for (const phrase of ["do not create a file unless the user requests saving", "Honor an explicit save request", "even if draft or incomplete", "A save-only request persists the current record without restarting capture", "distinguish an output destination from an input path", "no filename is specified, use `intent.md`", "`./intent.md` in the current working directory", "File-backed updates otherwise keep their input path", "do not overwrite unrelated content without explicit overwrite permission", "create a file only when saving is requested"])
+		assert(capture.includes(phrase), phrase);
+	assert(!capture.includes("for session input, do not create files"));
 });
 
 test("capture interviews resolve all questions and follow-ups before clearing the section", () => {
@@ -226,6 +244,17 @@ test("build updates a file or session todo and reconciles recovery without dupli
 	assert(!build.includes("save both `plan.md` and `todo.md`"));
 });
 
+test("build reports evidence-backed timings and human verification without resetting history", () => {
+	for (const phrase of ["## Timing and human verification", "actual clock readings", "ISO 8601", "each execution step", "internal tasks", "each round", "never sum overlapping rows", "Total wall time", "user-wait intervals", "unknown", "Human Verification Log", "HV-001", "one answered verification interaction once", "Pending/cancelled prompts", "clarification-only interactions separately", "approvals already obtained before build", "duplicate references", "Restore and extend them on resume", "lower bound", "does not add human approval steps", "Execution Timing", "Human Verification"])
+		assert(build.includes(phrase), phrase);
+	for (const phrase of ["actual start/end timestamps with timezone", "each assigned task", "evidence source", "unavailable historical timestamps as unknown", "Do not edit build's timing ledger or checklist"])
+		assert(code.includes(phrase), phrase);
+	const todoTemplate = [...plan.matchAll(/```markdown\n([\s\S]*?)\n```/g)][1][1];
+	assert(todoTemplate.includes("**Execution Timing**"));
+	assert(todoTemplate.includes("**Human Verification Log**"));
+	assert(plan.includes("retain its actual checkpoint and completion evidence"));
+});
+
 test("code always delegates fresh leaf workers, including tiny work, without recursive delegation", () => {
 	for (const phrase of ["even a one-line", "no parent-implementation shortcut", 'context: "fresh"', "leaf implementer", "do not invoke `/skill:code` again", "or spawn children", "A follow-up repair gets a new fresh worker"])
 		assert(code.includes(phrase), phrase);
@@ -233,6 +262,18 @@ test("code always delegates fresh leaf workers, including tiny work, without rec
 		assert(text.includes("one writer per cwd/worktree"));
 		assert(text.includes("native completion"));
 	}
+});
+
+test("implementation assignments bundle coherent work without weakening task gates or ownership", () => {
+	for (const text of [plan, build, code])
+		assert(text.includes("one implementer per coherent slice or bounded change"));
+	for (const phrase of ["not worker-launch units", "Preserve task IDs and task-level evidence", "Keep acceptance authorship and outside RED/GREEN gates distinct"])
+		assert(plan.includes(phrase), phrase);
+	for (const phrase of ["not an atomic todo action", "All prerequisites outside the assignment must have verified evidence", "Prerequisites inside it may initially be pending", "not the approved plan or its gates", "only the remaining reconciled work", "not one worker per finding"])
+		assert(build.includes(phrase), phrase);
+	for (const phrase of ["Every implementation assignment", "internal dependency edges", "combined exclusive boundary", "in the same worker session", "reporting evidence by task ID", "A replacement gets only remaining reconciled work", "acceptance tests and their fixtures are read-only"])
+		assert(code.includes(phrase), phrase);
+	assert(!code.includes("Every implementation task"));
 });
 
 test("every code worker bootstraps lc with active-task guidance without broadening its role", () => {
