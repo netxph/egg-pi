@@ -1,6 +1,6 @@
 ---
 name: capture
-description: Expand a lazy prompt into a prefilled intent record, or gather open decisions in an existing capture file/session document; interview the user only on request. Use when the user explicitly invokes /capture or /skill:capture, or as a document stage of an explicitly requested /skill:recover, /skill:sync, or /skill:delta; never implement the request during capture.
+description: Expand a lazy prompt into a prefilled intent record, or gather open decisions in an existing capture file/session document; interview the user only on request. Use when the user explicitly invokes /capture or /skill:capture, or as a document stage of an explicitly requested /skill:recover or /skill:sync; never implement the request during capture.
 disable-model-invocation: true
 ---
 
@@ -33,7 +33,7 @@ Honor an explicit save request during expansion, question gathering, an intervie
 
 Before writing, check whether the destination exists. Preserve the current capture's existing user edits; do not overwrite unrelated content without explicit overwrite permission. Write only the capture document, not product code or other artifacts. If reading or writing fails, report the failure without claiming it was saved; do not silently switch to another path.
 
-When invoked as a stage of recover, sync, or delta, retain that coordinator's explicit no-save, report-first, and approval boundaries; a linked source file alone does not authorize a write in those workflows. Intent acceptance remains separate from editing or finishing an interview.
+When invoked as a stage of recover or sync, retain that coordinator's explicit no-save, report-first, and approval boundaries; a linked source file alone does not authorize a write in those workflows. Intent acceptance remains separate from editing or finishing an interview.
 
 ## Implementation-state authority
 

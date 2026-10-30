@@ -23,7 +23,7 @@ test("all workflow skills are discoverable explicit-invocation skills", async ()
 	}
 });
 
-test("capture, slice, design, and plan use only todo completion, including branch recovery", () => {
+test("ordinary intent design/planning and branch recovery retain todo completion authority", () => {
 	for (const name of ["capture", "slice", "design", "plan"]) {
 		const text = read(name);
 		for (const phrase of ["## Implementation-state authority", "Only that todo establishes implementation progress", "If no matching todo or task exists", "checkbox is unchecked", "recovering documents from an already implemented branch", "entry points", "Build still reconciles real source/run state", "replay mutations"])
@@ -46,6 +46,50 @@ test("capture documents questions before user interaction and preserves consent 
 		assert(!capture.includes(obsolete), obsolete);
 });
 
+test("slice emits flat capture-format intents with frontmatter-only provenance", () => {
+	const slice = read("slice");
+	const template = slice.match(/```markdown\n([\s\S]*?)\n```/)[1];
+	const captureTemplate = read("capture").match(/```markdown\n([\s\S]*?)\n```/)[1];
+	const keys = (text) => [...text.split("---")[1].matchAll(/^([a-z_]+):/gm)].map((match) => match[1]).sort();
+	assert.deepEqual(keys(template), [...keys(captureTemplate), "parent_intent", "related_work", "dependencies"].sort());
+	assert(template.includes('type: "capture"'));
+	assert(template.includes('status: "draft"'));
+	assert(template.includes("# Capture: <short outcome title>"));
+	assert(!/SLICE-|# Slice:|type: "slice"|^id:|^order:|^covers:/m.test(template));
+	assert(template.includes("dependencies: []"));
+	assert(!/prerequisites|dependency graph/i.test(template.split("---").slice(2).join("---")));
+	const headings = (text) => text.match(/^## .+|^### Backwards Compatibility$/gm);
+	assert.deepEqual(headings(template), headings(captureTemplate));
+	for (const category of ["API", "Data schema", "Cache", "Deployment manifests", "Default behaviour"])
+		assert(template.includes(`| ${category} |`), category);
+	for (const phrase of ["Add only `parent_intent`, `related_work`, and `dependencies`", "provenance only", "flat list of references", "not invented file paths", "Source, related-work, and dependency links appear only in frontmatter", "dependencies are not repeated in body sections", "delivery order alone does not create one", "not nested parent/child directories"])
+		assert(slice.includes(phrase), phrase);
+	assert(read("delta").includes("including any existing `parent_intent`, `related_work`, and `dependencies` frontmatter, unchanged"));
+	assert(read("recover").includes("flat set of capture-format intent documents"));
+});
+
+test("slice finds the MVP cut before adding deferred capabilities without cutting safety", () => {
+	const slice = read("slice");
+	for (const phrase of ["MVP first", "**SPIDR**", "what must work in the MVP, what can safely wait", "Do not ask ancestry, parent-tracking, or work-hierarchy questions", "emit only the final flat set", "Features deferred from the MVP remain in later intents", "Keep essential safety controls in the first slice", "Do not implement anything", "unless the user explicitly asks you to save it"])
+		assert(slice.includes(phrase), phrase);
+	const outcomes = ["New Registration Page - Username and password, server validation only", "New Registration Page - Email and contact information, server validation only", "New Registration Page - Add client validation"];
+	assert(outcomes.every((title) => slice.includes(title)));
+	assert(slice.indexOf(outcomes[0]) < slice.indexOf(outcomes[1]));
+	assert(slice.indexOf(outcomes[1]) < slice.indexOf(outcomes[2]));
+	assert(slice.includes("while preserving server validation"));
+	assert(slice.includes("source-mandated identity, recovery, security, or compliance requirements may change the MVP cut"));
+});
+
+test("slice stays session-only until requested saves use descriptive kebab-case filenames", () => {
+	const slice = read("slice");
+	for (const phrase of ["Keep all generated intent documents in the session", "A file input does not authorize writing or updating it", "one complete record per file", "current working directory if none is specified", "Unless the user supplies an exact filename", "lowercase words separated by `-`, ending in `.md`", "without another naming confirmation", "never overwrite existing content without explicit permission", "Update saved frontmatter references to the actual relative paths"])
+		assert(slice.includes(phrase), phrase);
+	for (const filename of ["registration-basic.md", "registration-contact-fields.md", "registration-client-validation.md"])
+		assert(slice.includes(`\`${filename}\``), filename);
+	assert(!slice.includes("peer directories containing `intent.md`"));
+	assert(!slice.includes("confirm destinations before writing"));
+});
+
 test("design and plan retain direct interviews and exact-version approval gates", () => {
 	const design = read("design");
 	for (const name of ["design", "plan"]) {
@@ -59,6 +103,50 @@ test("design and plan retain direct interviews and exact-version approval gates"
 		assert(design.includes(phrase), phrase);
 	for (const phrase of ["Require explicit approval of the **exact current spec**", "If approval is missing, ask and wait", "Spec approval is not plan approval", "never automatically execute or delegate"])
 		assert(plan.includes(phrase), phrase);
+});
+
+test("design separates full baseline specifications from change-scoped delta specifications", () => {
+	const design = read("design");
+	for (const phrase of ["## Baseline intent and delta modes", "Read the content to identify the input type", "**Baseline intent input:**", "**Delta input:**", "baseline_intent", "based_on", "relative to the containing document", "incomplete interviews", "Draft status alone is not an incomplete interview", "assume the baseline delivery is already completed for scoping", "Do not require its todo to prove completion", "New delta work remains pending", "ordinary baseline design and branch recovery retain those rules", "Source inspection", "Only that todo establishes implementation progress"])
+		assert(design.toLowerCase().includes(phrase.toLowerCase()), phrase);
+});
+
+test("delta design preserves effective intent, traceability, and immutable baseline files", () => {
+	const design = read("design");
+	for (const phrase of ["delta overrides only the targets it explicitly changes", "everything else remains in force", "not drift merely because it differs", "Map every local `D-` change ID", "complete replacement behavior", "observable removal behavior", "source_delta:", "keep `source_intent` pointing to the resolved baseline intent", "Delta Change | Requirements | Scenarios | Baseline / Prior Target", "Baseline delivery: assumed completed for delta scoping — not independently verified", "source contradicts the completed-baseline assumption", "Never overwrite the baseline spec", "spec.md` beside the supplied delta.md", "Do not create plan.md or todo.md", "Do not mark it Approved on the user's behalf", "baseline approval does not approve the delta"])
+		assert(design.includes(phrase), phrase);
+	const template = design.match(/```markdown\n([\s\S]*?)\n```/)[1];
+	assert(template.includes('source_intent: "<input reference>"'));
+	assert(!template.includes("source_delta:"), "ordinary baseline template must not require a delta");
+});
+
+test("change planning schedules only new obligations and uses the change's own todo", () => {
+	for (const phrase of ["## Change-scoped specs", "source_delta", "baseline_intent", "spec's `source_intent` must identify the same baseline", "Assume baseline delivery is completed for delta scoping", "Do not regenerate baseline tasks", "matching todo means this change's todo", "New change tasks start unchecked", "ordinary branch recovery", "never overwrite baseline documents", "change still needs its own approval and verification gates"])
+		assert(plan.includes(phrase), phrase);
+});
+
+test("plan uses only the approved spec as scope without replaying upstream discovery", () => {
+	for (const phrase of ["## Spec-scoped planning", "The supplied spec is the planning scope", "Intent or delta alone is not a planning input", "Generate only plan.md and todo.md", "Every task must map to a requirement/scenario in that spec", "Treat preserved baseline behavior as a regression obligation", "Do not require the full intent/delta/baseline document set", "only to resolve a concrete missing detail or contradiction", "missing unrelated upstream document is not a reason to block", "explicit baseline/change-scope statement", "Never fall back to a baseline/ancestor todo", "Baseline delivery: assumed completed for change scoping — not independently verified"])
+		assert(plan.includes(phrase), phrase);
+	assert(!plan.includes("resolve and read that delta, its `baseline_intent`, and explicitly included prior changes"));
+	const templates = [...plan.matchAll(/```markdown\n([\s\S]*?)\n```/g)].map((match) => match[1]);
+	assert.equal(templates.length, 2);
+	assert(templates[0].includes("**Planning Scope**"));
+	assert(templates[0].includes("**Scope & Baseline**"));
+	assert(templates[1].includes("**Planning Scope & Baseline**"));
+	assert(templates[0].includes('reference_spec: "<approved spec reference/version>"'));
+	assert(templates[1].includes('spec: "<same approved spec reference/version>"'));
+});
+
+test("build and vet consume delta provenance without treating declared changes as baseline drift", () => {
+	for (const text of [build, vet]) {
+		for (const phrase of ["source_delta", "baseline_intent", "effective intent: baseline plus explicitly included prior changes plus the delta", "assumed completed for delta scoping"])
+			assert(text.includes(phrase), phrase);
+	}
+	assert(build.includes("Use only this change's matching todo"));
+	assert(build.includes("stop on concrete contradictions rather than replaying baseline work"));
+	assert(vet.includes("change spec and plan still require their own approvals"));
+	assert(vet.includes("not historical baseline tasks"));
 });
 
 test("only capture routes lazy prompts and conforming documents into separate steps", () => {
@@ -152,31 +240,34 @@ test("recover composes all document stages and confirms evidence-backed todo rec
 	assert(read("slice").includes("accept its clearly identified session intent directly"));
 });
 
-test("delta revises an existing slice through capture, design, and plan without re-slicing", () => {
+test("delta accepts baseline intent and change summary, then interviews without assumptions", () => {
 	const delta = read("delta");
-	for (const name of ["capture", "design", "plan"]) {
-		assert(delta.includes(`../${name}/SKILL.md`));
-		assert(read(name).includes("/skill:delta"), `${name} accepts delta`);
+	for (const phrase of ["baseline intent", "short summary of proposed changes", "file path, pasted document, or unambiguous current-session reference", "If either input is missing or ambiguous", "Spec, plan, and todo are **not required inputs**", "Invoking delta authorizes the clarification interview", "one focused question at a time", "Do not invent actors", "Ask follow-ups", "all intended-change decisions and follow-ups are resolved", "explicitly incomplete draft", "Do not run capture, slice, design, plan, build, or code"])
+		assert(delta.includes(phrase), phrase);
+	for (const name of ["capture", "slice", "design", "plan"]) {
+		assert(!delta.includes(`../${name}/SKILL.md`), name);
+		assert(!read(name).includes("/skill:delta"), `${name} no longer runs inside delta`);
 	}
-	for (const phrase of ["change description", "one focused question at a time", "exact revised spec", "Plan approval is separate", "confirmed destinations", "Do not invoke build/code", "Preserve stable IDs", "New tasks start unchecked", "active workers", "superseded", "complete revised", "No files saved; no implementation performed"])
-		assert(delta.includes(phrase), phrase);
-	assert(delta.indexOf("1. **Capture") < delta.indexOf("2. **Design"));
-	assert(delta.indexOf("2. **Design") < delta.indexOf("3. **Plan"));
-	assert(!delta.includes("../slice/SKILL.md"));
-	assert(!read("slice").includes("/skill:delta"));
-	for (const phrase of ["existing target slice", "Do not invoke the slice skill", "retain its template, type, ID", "upstream coordination"])
+});
+
+test("delta emits one change proposal and leaves the baseline and previous packages immutable", () => {
+	const delta = read("delta");
+	const templates = [...delta.matchAll(/```markdown\n([\s\S]*?)\n```/g)];
+	assert.equal(templates.length, 1);
+	const template = templates[0][1];
+	for (const field of ['type: "delta"', 'status: "draft"', "baseline_intent:", "based_on: []"])
+		assert(template.includes(field), field);
+	for (const heading of ["Reason & Desired Outcome", "Baseline & Scope", "Change Map", "Preserved Behavior & Boundaries", "Success Signals", "Constraints & Compatibility", "Decisions & Open Questions"])
+		assert(template.includes(heading), heading);
+	for (const phrase of ["Add / Modify / Remove", "D-001", "Existing Outcome", "Intended Outcome", "Interview state", "Open questions"])
+		assert(template.includes(phrase), phrase);
+	for (const phrase of ["Never edit baseline intent, spec, plan, todo, or previous change packages", "Absence from the change map means unchanged, not removed", "Do not copy the full baseline", "Do not silently apply every folder", "numbering alone does not establish approval", "No files saved; no implementation performed"])
 		assert(delta.includes(phrase), phrase);
 });
 
-test("delta accepts a requested change and target feature via folder, prompt, or current session", () => {
+test("delta saves only on request into a new numbered descriptive baseline change folder", () => {
 	const delta = read("delta");
-	for (const phrase of ["## Required inputs", "two inputs", "Requested change", "Target feature", "intent, design/spec, plan, and todo", "Folder:", "Prompt:", "Current session:", "no rigid argument syntax", "do not require saved files", "If either input is missing or ambiguous", "do not silently choose the newest or mix conflicting versions"])
-		assert(delta.includes(phrase), phrase);
-});
-
-test("delta checks whole-set coverage and preserves progress without inventing completion", () => {
-	const delta = read("delta");
-	for (const phrase of ["## Whole-set synchronization gate", "both directions", "unaffected", "parent_intent", "source_intent", "reference_spec", "requirements/scenarios", "dependencies", "checkboxes", "historical RED", "not proven synchronized", "Re-read", "Never silently reset", "todo remains the progress authority"])
+	for (const phrase of ["File input does not authorize saving", "save-only follow-up", "explicit request to save an incomplete draft is allowed", "<baseline folder>/changes/NNN-description/delta.md", "plans/checkout/changes/001-credit-card/delta.md", "ask for the baseline folder before writing", "at save time", "highest numeric prefix", "Zero-pad to at least three digits", "do not count directories or reuse gaps", "lowercase kebab-case", "without restarting a completed interview", "Re-read file-backed baseline", "../../../intent.md", "new folder exclusively", "Never overwrite an existing delta.md", "rather than creating a duplicate", "Write only the requested delta.md", "On failure, report the exact path", "Saving does not approve the proposal"])
 		assert(delta.includes(phrase), phrase);
 });
 
@@ -228,6 +319,26 @@ test("build accepts file, pasted, and session plans with linked spec and intent 
 		assert(build.includes(phrase), phrase);
 	assert(!build.includes("May I run `/skill:vet` first"));
 	assert(!build.includes("vet may not have reviewed"));
+});
+
+test("build selects a single baseline or delta context without ancestor or latest-folder fallback", () => {
+	for (const phrase of ["## Active context folder", "one active context", "explicit context folder", "plan file selects its containing directory", "current working directory for its own plan.md", "Do not recursively search", "walk to an ancestor plan", "choose the latest numbered delta", "plans/checkout/changes/001-credit-card/", "source_delta", "baseline_intent", "Verify plan → spec, plan ↔ todo, and todo → spec", "Never substitute a baseline spec/todo", "including through symlinks", "Session-backed contexts remain supported without saving"])
+		assert(build.includes(phrase), phrase);
+});
+
+test("build keeps checkpoints and all progress local to its active context", () => {
+	for (const phrase of ["Scope task IDs, run ownership, review rounds, evidence, and restart checkpoints to this context", "Never import or update an ancestor, sibling, or previous context's todo", "Persist the active context identity", "Restore and validate that identity on every resume", "conflicting checkpoint requires clarification", "delta builds may update only their own delta todo", "Do not create a second competing checklist or relocate progress to the baseline", "Changing context requires explicit selection and reconciliation of any active writers", "exact session-only identity, baseline/delta mode, target source repository"])
+		assert(build.includes(phrase), phrase);
+});
+
+test("build workers and review preserve document context separately from source execution cwd", () => {
+	assert(build.includes("not the source repository or worker cwd"));
+	assert(build.includes("target source repository/ref separately"));
+	assert(build.includes("active context identity and exact plan/spec/todo references"));
+	for (const phrase of ["inherit the parent's active baseline/delta context identity", "do not discover another plan", "planning folder is not the worker cwd", "preserving protected workflow documents", "active context identity in the handoff"])
+		assert(code.includes(phrase), phrase);
+	for (const phrase of ["parent's active context folder or exact session-only identity", "Do not select another folder's checklist", "recorded source repository/worktree, not the planning folder", "active context identity in the report"])
+		assert(vet.includes(phrase), phrase);
 });
 
 test("plan returns separate linked plan/todo documents in chat and saves only on request", () => {

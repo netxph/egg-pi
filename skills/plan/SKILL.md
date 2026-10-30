@@ -1,18 +1,32 @@
 ---
 name: plan
-description: Translate an explicitly approved behavioral spec into vertical delivery slices, horizontal outside-in TDD tasks, and dependency-safe parallel groups in plan.md and todo.md. Use only when explicitly invoked as /skill:plan or as a document stage of an explicitly requested /skill:recover, /skill:sync, or /skill:delta; never execute the plan.
+description: Generate only plan.md and todo.md for the supplied approved spec. For change specs, assume baseline delivery is complete and plan only the specified changes, integration, and verification. Use only when explicitly invoked as /skill:plan or as a document stage of an explicitly requested /skill:recover or /skill:sync; never execute the plan.
 disable-model-invocation: true
 ---
 
 # Plan
 
-Plan **how to implement and verify an approved specification**. Accept a spec path, pasted spec, or a clearly identified spec in the conversation. If none is supplied, ask for the design input using `ask_user_question`; never silently choose it.
+Plan **how to implement and verify an approved specification**. Accept a spec path, pasted spec, or a clearly identified spec in the conversation. If none is supplied, ask for the design input using `ask_user_question`; never silently choose it. The supplied spec is the planning scope, whether it describes a full feature or a change to an already completed baseline. Intent or delta alone is not a planning input; ask for the related spec instead of designing it here.
 
 Keep planning read-only. Do not write implementation or test code, install dependencies, migrate data, launch workers, or invoke an implementation skill. Test commands here describe future execution; do not claim red/green evidence was obtained during planning. Always return **two separate documents**, `plan.md` and `todo.md`, in chat. Save only on explicit request after confirming both destinations; do not overwrite existing plans or checked-off work without confirmation. Build may use the matching `todo.md` from a file or the current session and update it in that medium; saving either document is not an execution prerequisite. The user may later ask the harness to save both documents to a specified directory. Session-only progress supports recovery only when that history or the latest checklist is available; do not promise cross-session persistence without saved artifacts.
 
+## Spec-scoped planning
+
+Generate only plan.md and todo.md from the related approved spec; do not generate or revise intent, delta, or spec documents, invoke upstream skills, implement code, or execute the plan. Every task must map to a requirement/scenario in that spec or be a necessary enabler, integration, or verification task for one. Do not recover extra scope from baseline documents, earlier plans, or current source. Treat preserved baseline behavior as a regression obligation, not a request to rebuild it.
+
+Use the spec's established decisions and evidence. Do not require the full intent/delta/baseline document set as a prerequisite to planning. Consult an upstream reference only to resolve a concrete missing detail or contradiction that affects this spec's execution; resolve file links relative to the containing document and ask if that needed reference is inaccessible or ambiguous. A missing unrelated upstream document is not a reason to block a self-contained approved spec. If a product decision is unresolved, stop for spec clarification and renewed approval rather than inventing behavior or silently expanding the plan.
+
+## Change-scoped specs
+
+Identify change scope from `source_delta` or an explicit baseline/change-scope statement in the spec, not its filename, directory, or source-code presence. Ask if the distinction is ambiguous; do not assume that a full-feature spec is a delta. Carry forward the spec's `source_delta`, `source_intent`, and stated baseline/prior-change references as provenance without replaying change discovery. When consulting a linked delta for a concrete issue, the spec's `source_intent` must identify the same baseline as its `baseline_intent`; ask about contradictions. Preserve this chain through the plan's `reference_spec` and todo's `spec` links and record it in Coverage & Review and the Execution Checkpoint.
+
+**Assume baseline delivery is completed for delta scoping**, as established by design. Plan only the approved change spec and its necessary integration, compatibility, and regression checks. Do not regenerate baseline tasks, require the baseline todo as completion proof, or import its checkboxes into the change todo. The matching todo means this change's todo, not the baseline's. Never fall back to a baseline/ancestor todo merely because no change todo exists. New change tasks start unchecked; preserve existing progress only from that matching change todo. Record **Baseline delivery: assumed completed for change scoping — not independently verified** in Coverage & Review and the Execution Checkpoint; list affected existing behavior only as context and regression coverage, not pending baseline implementation. This scoped exception overrides the full-contract/default-pending rules below only for baseline work, not new delta work or ordinary branch recovery. Observed source contradictions that affect prerequisites require clarification, not automatic baseline reimplementation. Baseline completion is an assumption, not historical RED/GREEN evidence; the change still needs its own approval and verification gates.
+
+Return the usual separate plan.md and todo.md. On an explicit save request, propose the change spec's directory for both and confirm destinations; never overwrite baseline documents or previous completed packages. Do not modify the source delta or broaden its approved scope. No automatic execution follows.
+
 ## Implementation-state authority
 
-For this documentation workflow, **assume requested work is not implemented for planning unless the matching plan's todo records it complete**. Only that todo establishes implementation progress. Resolve a supplied/linked todo from a file or the current session, or a verified same-directory candidate; ask if its relationship or version is ambiguous. If no matching todo or task exists, or its checkbox is unchecked, treat that work as pending. A checked entry applies only to its mapped task, not the entire slice or requirement. Missing todo input does not block creating a new plan/todo pair.
+Except for the completed-baseline scoping exception for change-scoped specs, apply these rules. For this documentation workflow, **assume requested work is not implemented for planning unless the matching plan's todo records it complete**. Only that todo establishes implementation progress. Resolve a supplied/linked todo from a file or the current session, or a verified same-directory candidate; ask if its relationship or version is ambiguous. If no matching todo or task exists, or its checkbox is unchecked, treat that work as pending. A checked entry applies only to its mapped task, not the entire slice or requirement. Missing todo input does not block creating a new plan/todo pair.
 
 Continue inspecting code for behavior, external entry points, test seams, constraints, dependencies, and reusable parts. Source, commits, passing tests, existing documents, and user claims do not establish recorded completion. Do not omit work or mark prerequisites satisfied merely because the branch contains code for them. Separate source observations from checklist status; pending does not mean code is physically absent. Plan the full approved contract, preserve recorded completed tasks and their traceability, and schedule only pending work behind the required verification/dependency gates.
 
@@ -94,6 +108,7 @@ todo: "./todo.md"
 
 - **Primary Tech Stack**: <repository-evidenced stack>
 - **Approval**: <spec approval evidence; plan awaiting review>
+- **Planning Scope**: <exact spec reference/version; full feature or specified changes only>
 
 ## 1. Architectural Strategy
 <smallest approach, existing helpers/patterns reused, necessary contracts and why>
@@ -139,6 +154,7 @@ todo: "./todo.md"
 | Requirement / Scenario | Slice | Implementation Tasks | Outside RED / GREEN Tasks |
 | --- | --- | --- | --- |
 | <R / AC IDs> | <VS ID> | <T IDs> | <T IDs> |
+- **Scope & Baseline**: <full-feature scope, or change scope with baseline assumed completed, source references, and affected regression obligations; no historical verification claim>
 - **Open Questions**: None.
 - **Review State**: Complete draft, awaiting explicit plan approval.
 ```
@@ -164,7 +180,8 @@ plan: "./plan.md"
 Execution rules: Begin only after plan approval. Build is the sole progress owner. Find the matching checklist in a file or the current session; update the file when file-backed, or return the complete updated todo document in chat when session-backed. On every restart, read the latest available checklist and reconcile checkboxes, evidence, current source, and existing runs before launching work. Run tasks whose prerequisites are verified; parallelize only named safe groups. Check a task off only after its verification succeeds and include the evidence in the updated checklist. Stop and ask when the spec, dependency, expected failure, or write boundary is wrong.
 
 ## Execution Checkpoint
-- **Context**: <actual file or session plan/spec/intent references and approved versions; repository/cwd/ref>
+- **Context**: <actual file or session plan/spec references and approved versions; upstream provenance supplied by the spec; repository/cwd/ref>
+- **Planning Scope & Baseline**: <full feature, or only the specified changes with baseline delivery assumed completed for scoping — not independently verified>
 - **Implementation-State Source**: <matching prior todo and task references, or no prior todo — all tasks initially pending>
 - **Review Rounds Used**: 0 of 3.
 - **Active Work**: None — execution has not started.
