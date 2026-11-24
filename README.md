@@ -22,7 +22,7 @@ The package manifest is defined in `package.json` under the `pi` key.
 Capture alone uses an input-driven workflow; design and plan retain their normal document-first workflows, without capture phases:
 
 1. **Lazy prompt → expanded document:** `/skill:capture <lazy prompt>` returns the full capture template prefilled from your request, integrating its meaning into direct problem and outcome statements and leaving unsupported fields unknown. It reads as an intent document, not “the user wants…” narration, and excludes original-prompt blocks and transcripts. Any readable input that does not conform to the capture template counts as a lazy prompt. No Open Questions or interview yet; you can enrich the document yourself.
-2. **Capture document → open decisions:** `/skill:capture intent.md` (or an explicitly identified conforming capture in the session) gathers remaining decisions and adds Open Questions without another phase command. Standalone file input is edited directly, including after interview answers; session/pasted input is revised in chat unless you request saving. Explicit save requests are allowed at any step, including incomplete drafts and later save-only turns. New files default to `intent.md` in your requested directory, or the current working directory; explicit destinations take precedence. Existing file-backed updates retain their input path unless redirected. Unrelated existing content is not overwritten without permission. File read/write failures are reported, not silently redirected. Recovery/sync retain their coordinator's no-save and approval rules.
+2. **Capture document → open decisions:** `/skill:capture intent.md` (or an explicitly identified conforming capture in the session) gathers remaining decisions and adds Open Questions without another phase command. Standalone file input is edited directly, including after interview answers; session/pasted input is revised in chat unless you request saving. Captures are never saved unless explicitly requested, including incomplete drafts and later save-only turns. When asked to save without a folder or filename, use `.pi/plans/<title>/intent.md`, inferring the title from the problem or desired outcome and converting it to lowercase kebab case; explicit output destinations take precedence. Existing file-backed updates retain their input path unless redirected. Unrelated existing content is not overwritten without permission. File read/write failures are reported, not silently redirected. Recovery/sync retain their coordinator's no-save and approval rules.
 
 When you explicitly request an interactive user interview, capture works through all questions and follow-ups, updating the document after each answer. A successful interview leaves no unresolved decisions and removes Open Questions entirely. Cancellation or unavailable answers pause the interview with remaining questions intact—never a false claim of completion. Neither completing the interview nor editing the document accepts the intent for you. No phase metadata is needed.
 
@@ -102,13 +102,6 @@ Long questions, option labels, and keyboard hints wrap to the available width; o
 In multi-select mode, use **Space** to toggle choices and **Enter** on a normal choice to submit the checked answers. The last option always lets you type an answer: Enter saves it, then Enter on a normal choice submits it together with any checked choices. Reopen the typed answer to edit it or submit blank text to clear it. With no supplied choices, typed input submits directly. Esc leaves editing or cancels the question.
 
 Generic English placeholders such as “Custom answer,” “Other (please specify),” and “The user will type an answer” are filtered from supplied options. Substantive choices such as “Use a custom API” remain. Results include an `answers` array while retaining the existing `answer` string and `wasCustom` flag.
-
-Run the tool interaction and skill-contract checks using your installed Pi package directory (these do not launch real workers):
-
-```bash
-PI_PACKAGE_DIR=/path/to/node_modules/@earendil-works/pi-coding-agent \
-  node --test tests/*.test.mjs
-```
 
 ## Use locally
 
