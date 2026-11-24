@@ -38,7 +38,7 @@ Prefer these over `rg`/`read` for exploring code; they return compact, symbol-aw
 - **`search_graph`**: conceptual "where is X implemented?" lookup.
 - **`search_and_read_symbols`**: discover and read top matches in one call (small `read_limit`).
 - **`read_symbol`** / **`read_symbols`**: source for known symbol names; add `file_path`/`parent_class` to disambiguate.
-- **`get_code_snippet(s)`**: source for exact qualified names.
+- **`get_code_snippet`**: source for exact qualified names.
 - **`trace_path`**: callers, callees, data flow, impact (depth 2–3).
 - **`search_code`**: exact strings, config keys, env vars, error messages.
 - **`get_architecture`**: orientation in an unfamiliar repo.
