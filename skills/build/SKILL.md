@@ -79,7 +79,7 @@ Create a compact execution board using the plan/checklist's IDs:
 - Track pending, ready, running, verified, blocked, and integrated states separately. A checkbox or worker completion is not verification. On resumption, inspect existing evidence and the current source state before trusting checked tasks; never reset progress silently.
 - Recheck the dependency graph, red-before-implementation and green-after-integration gates, shared contracts, write boundaries, and environment contention. Invalid IDs, cycles, missing prerequisites, or unsafe parallel labels require clarification, not improvised ordering.
 - Preserve vertical slices: each starts with its outside RED gate, moves inward through its supporting tasks, and ends with outside GREEN through the real path plus relevant regressions. Record command, working directory/environment, test/scenario, expected and actual result, source state, and run/artifact reference. Environment or syntax failures are not behavioral RED evidence.
-- If behavior already passes or the work preserves behavior, ask for the documented test-gate exception rather than manufacturing failure. Do not retrospectively claim historical RED from a passing final suite.
+- If behavior already passes or the work preserves behavior, ask for the documented test-gate exception rather than manufacturing failure, unless the approved plan already documents it (regression-guard scenarios marked `Already passes`). Do not retrospectively claim historical RED from a passing final suite.
 
 ## Scheduling through code
 
